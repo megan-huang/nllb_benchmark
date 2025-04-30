@@ -1,0 +1,6 @@
+datasets
+transformers
+torch
+sacrebleu
+nltk
+bert-score
