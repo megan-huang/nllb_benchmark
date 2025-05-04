@@ -8,9 +8,9 @@ def run_benchmark(model_path, batch_size=16, max_length=128):
     src_texts, refs = load_en_zh_test()
 
     tokenizer = NllbTokenizerFast.from_pretrained(
-        model_path, src_lang="eng_Latn", tgt_lang="zho_Hans"
+        "model", src_lang="eng_Latn", tgt_lang="zho_Hans"
     )
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_path).to("cuda").eval()
+    model = AutoModelForSeq2SeqLM.from_pretrained("model").to("cuda").eval()
 
     hyps = []
     for i in range(0, len(src_texts), batch_size):
@@ -25,4 +25,4 @@ def run_benchmark(model_path, batch_size=16, max_length=128):
         print(f"{name:10s}: {score}")
 
 if __name__ == "__main__":
-    run_benchmark("model/facebook-nllb-200-distilled-600M")
+    run_benchmark("model")
