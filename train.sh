@@ -7,4 +7,5 @@
 #SBATCH --output=%j.out
 #SBATCH --error=%j.err 
 
+source venv/bin/activate
 python3 benchmark.py
