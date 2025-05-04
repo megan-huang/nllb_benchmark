@@ -3,7 +3,7 @@ import nltk
 nltk.download('wordnet', quiet=True)
 
 import sacrebleu
-from sacrebleu.metrics import TER
+# from sacrebleu.metrics import TER
 from nltk.translate.meteor_score import meteor_score, single_meteor_score
 from bert_score import score as bert_score
 import torch
@@ -13,14 +13,18 @@ def compute_metrics(hyps, refs):
     sacre_refs = [refs]
     bleu = sacrebleu.corpus_bleu(hyps, sacre_refs)
     chrf = sacrebleu.corpus_chrf(hyps, sacre_refs)
-    ter_char = TER(tokenize="char")
-    ter = ter_char.corpus_score(hyps, sacre_refs) # fixing for chinese (no spaces in sentence)
+
+    char_refs = [" ".join(list(r)) for r in refs]
+    char_hyps = [" ".join(list(h)) for h in hyps]
+    ter = sacrebleu.corpus_ter(char_hyps, [char_refs])
+    ter_score = ter.score
 
     # split on whitespace
     meteor = sum(
         meteor_score([r.split()], h.split())
         for r, h in zip(refs, hyps)
     ) / len(hyps)
+
     P, R, F1 = bert_score(hyps, refs, lang="zh", rescale_with_baseline=True)
     bert = F1.mean().item()
 
@@ -28,7 +32,7 @@ def compute_metrics(hyps, refs):
     return {
         "BLEU": round(bleu.score, 2),
         "ChrF": round(chrf.score, 2),
-        "TER": round(ter.score * 100, 2),
+        "TER": round(ter_score, 2),
         "METEOR": round(meteor * 100, 2),
         "BERTScore": round(bert * 100, 2),
     }
@@ -37,11 +41,15 @@ def compute_sentence_scores(hyps, refs):
     # returns a dict mapping metric name to a list of scores (one per sentence)
 
     # sentence‐BLEU, ChrF, TER from sacrebleu
-    sent_bleu =  [sacrebleu.sentence_bleu(h, [r]).score           for h,r in zip(hyps, refs)]
-    sent_chrf =  [sacrebleu.sentence_chrf(h, [r]).score          for h,r in zip(hyps, refs)]
-    ter_sent = TER(tokenize="char")
-    sent_ter = [ter_sent.sentence_score(h, [r]).score * 100
-                for h, r in zip(hyps, refs)]
+    sent_bleu =  [sacrebleu.sentence_bleu(h, [r]).score for h,r in zip(hyps, refs)]
+    sent_chrf =  [sacrebleu.sentence_chrf(h, [r]).score for h,r in zip(hyps, refs)]
+    # character-level sentence TER
+    sent_ter = []
+    for h, r in zip(hyps, refs):
+        char_h = " ".join(list(h))
+        char_r = " ".join(list(r))
+        sent_ter.append(sacrebleu.sentence_ter(char_h, [char_r]).score)
+
 
     # sentence-METEOR (single_meteor_score expects token lists)
     sent_meteor = [
@@ -104,8 +112,6 @@ def compute_back_translation_loss(
             truncation=True,
             max_length=max_length
         ).to(device)
-        # labels = original token ids
-        tokenizer.src_lang = src_lang
         labels = inputs_A["input_ids"].to(device)
 
         # forward with labels to compute loss
