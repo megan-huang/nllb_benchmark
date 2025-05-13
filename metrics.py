@@ -85,7 +85,7 @@ def compute_back_translation_loss(
     model.eval()
 
     losses = []
-    for sentence in tqdm(src_texts, desc="Back-translation"):  # A -> B
+    for sentence in tqdm(src_texts, desc="Back-translation"): # A -> B
         # translate to target
         tokenizer.src_lang = src_lang
         inputs_A = tokenizer(

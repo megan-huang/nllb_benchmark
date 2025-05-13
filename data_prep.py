@@ -16,6 +16,6 @@ def load_wmt20_qe_en_zh():
     qe = load_dataset("wmt/wmt20_mlqe_task1", "en-zh", split="test")
     srcs       = [ex["translation"]["en"] for ex in qe]
     refs       = [ex["translation"]["zh"] for ex in qe]
-    human_mean = [ex["mean"] for ex in qe]    # raw DA score (0–100)
-    human_z    = [ex["z_mean"] for ex in qe]  # z-normalized DA
+    human_mean = [ex["mean"] for ex in qe] # raw DA score (0–100)
+    human_z    = [ex["z_mean"] for ex in qe] # z-normalized DA
     return srcs, refs, human_mean, human_z
